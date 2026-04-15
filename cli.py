@@ -72,15 +72,25 @@ def _cmd_presets(_args: argparse.Namespace) -> None:
 def _cmd_run(args: argparse.Namespace) -> None:
     """Integrate a geodesic and display (or save) the plot."""
     import solver
-    import plot as plotter
-
+ 
     orbital, cfg = _resolve_params(args)
-
+ 
     print(f"\nRunning {cfg.solver} integrator …")
     sol = solver.run(orbital, cfg)
     _print_stats(sol, cfg)
-
-    saved_to = plotter.plot(sol, save_path=args.save)
+ 
+    use_3d = getattr(args, "three_d", False)
+    if use_3d:
+        import plot3D as plotter
+        saved_to = plotter.plot3d(
+            sol,
+            inclination_deg=args.inclination,
+            save_path=args.save,
+        )
+    else:
+        import plot as plotter
+        saved_to = plotter.plot(sol, save_path=args.save)
+ 
     if saved_to:
         print(f"  Figure saved → {saved_to}")
 
@@ -151,6 +161,10 @@ def make_parser() -> argparse.ArgumentParser:
     run_p = sub.add_parser("run", parents=[shared], help="Integrate and plot a geodesic.")
     run_p.add_argument("--save", metavar="PATH",
                        help="Save figure to file instead of displaying it.")
+    run_p.add_argument("--3d", dest="three_d", action="store_true",
+                       help="Render a 3D perspective plot instead of the default 2D polar plot.")
+    run_p.add_argument("--inclination", type=float, default=30.0, metavar="DEG",
+                       help="Tilt of the orbital plane for 3D view (degrees, default: 30).")
     run_p.set_defaults(func=_cmd_run)
 
     # info 
