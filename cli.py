@@ -71,7 +71,8 @@ def _cmd_presets(_args: argparse.Namespace) -> None:
 
 def _cmd_run(args: argparse.Namespace) -> None:
     """Integrate a geodesic and display (or save) the plot."""
-    import core.solver as solver
+    from core import solver
+    from render import plot2d, plot3d
  
     orbital, cfg = _resolve_params(args)
  
@@ -79,21 +80,14 @@ def _cmd_run(args: argparse.Namespace) -> None:
     sol = solver.run(orbital, cfg)
     _print_stats(sol, cfg)
  
-    use_3d = getattr(args, "three_d", False)
-    if use_3d:
-        import render.plot3D as plotter
-        saved_to = plotter.plot3d(
-            sol,
-            inclination_deg=args.inclination,
-            save_path=args.save,
-        )
+    if getattr(args, "three_d", False):
+        saved_to = plot3d.plot(sol, inclination_deg=args.inclination, save_path=args.save)
     else:
-        import render.plot as plotter
-        saved_to = plotter.plot(sol, save_path=args.save)
+        saved_to = plot2d.plot(sol, save_path=args.save)
  
     if saved_to:
         print(f"  Figure saved → {saved_to}")
-
+        
 
 def _cmd_info(args: argparse.Namespace) -> None:
     """Print stats without opening a plot window."""

@@ -2,6 +2,6 @@
 render — Matplotlib renderers for Schwarzschild geodesics.
 """
  
-from render import plot, plot3D
+from render import plot2d, plot3d
  
-__all__ = ["plot", "plot3D"]
+__all__ = ["plot2d", "plot3d"]
