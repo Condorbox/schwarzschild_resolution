@@ -11,8 +11,8 @@ import time
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from config import OrbitalParams, SolverConfig, Solution
-from physics import RS, build_initial_state, geodesic_rhs
+from core.config import OrbitalParams, SolverConfig, Solution
+from core.physics import RS, build_initial_state, geodesic_rhs
 
 
 # Private integrators

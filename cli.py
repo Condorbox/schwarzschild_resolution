@@ -11,8 +11,8 @@ Sub-commands
 from __future__ import annotations
 import argparse
 
-from config   import OrbitalParams, SolverConfig
-import presets as preset_registry
+from core.config   import OrbitalParams, SolverConfig
+import core.presets as preset_registry
 
 
 def _preset_name(value: str) -> str:
@@ -71,7 +71,7 @@ def _cmd_presets(_args: argparse.Namespace) -> None:
 
 def _cmd_run(args: argparse.Namespace) -> None:
     """Integrate a geodesic and display (or save) the plot."""
-    import solver
+    import core.solver as solver
  
     orbital, cfg = _resolve_params(args)
  
@@ -81,14 +81,14 @@ def _cmd_run(args: argparse.Namespace) -> None:
  
     use_3d = getattr(args, "three_d", False)
     if use_3d:
-        import plot3D as plotter
+        import render.plot3D as plotter
         saved_to = plotter.plot3d(
             sol,
             inclination_deg=args.inclination,
             save_path=args.save,
         )
     else:
-        import plot as plotter
+        import render.plot as plotter
         saved_to = plotter.plot(sol, save_path=args.save)
  
     if saved_to:
@@ -97,7 +97,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
 
 def _cmd_info(args: argparse.Namespace) -> None:
     """Print stats without opening a plot window."""
-    import solver
+    import core.solver as solver
 
     orbital, cfg = _resolve_params(args)
 

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config import Solution
+from core.config import Solution
 
 
 def plot(solution: Solution, save_path: str | None = None) -> str | None:

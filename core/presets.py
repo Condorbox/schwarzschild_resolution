@@ -3,7 +3,7 @@ Named orbital parameter presets
 """
 
 from __future__ import annotations
-from config import OrbitalParams, SolverConfig
+from core.config import OrbitalParams, SolverConfig
 from dataclasses import dataclass
 
 

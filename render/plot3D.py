@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 registers the 3d projection
 
-from config import Solution
+from core.config import Solution
 
 
 def _to_cartesian(r: np.ndarray, phi: np.ndarray, inclination_deg: float = 30.0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
