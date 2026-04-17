@@ -6,6 +6,8 @@ Sub-commands
   run      Integrate and plot a geodesic (custom parameters or a preset).
   presets  List all built-in presets.
   info     Print stats for a run without opening a plot window.
+  gui      Launch a browser-based GUI (renders PNGs inline).
+  tui      Launch the Textual terminal UI.
 """
 
 from __future__ import annotations
@@ -100,6 +102,18 @@ def _cmd_info(args: argparse.Namespace) -> None:
     _print_stats(sol, cfg)
 
 
+def _cmd_ui(_args: argparse.Namespace) -> None:
+    """Launch the interactive Tkinter GUI."""
+    try:
+        from ui.app import launch
+    except ImportError as exc:
+        raise SystemExit(
+            f"Could not import the UI module: {exc}\n"
+            "Make sure the 'ui/' package is present next to cli.py."
+        ) from exc
+    launch()
+
+
 def _resolve_params(args: argparse.Namespace) -> tuple[OrbitalParams, SolverConfig]:
     """
     Return (OrbitalParams, SolverConfig) from either a preset name or
@@ -168,5 +182,9 @@ def make_parser() -> argparse.ArgumentParser:
     # presets 
     presets_p = sub.add_parser("presets", help="List built-in presets.")
     presets_p.set_defaults(func=_cmd_presets)
+
+    # ui
+    ui_p = sub.add_parser("ui", help="Launch the interactive Tkinter GUI.")
+    ui_p.set_defaults(func=_cmd_ui)
 
     return parser

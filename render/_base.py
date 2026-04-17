@@ -10,38 +10,20 @@ auto_save_path — non-clobbering filename helper.
 """
 
 from __future__ import annotations
+import os
 from pathlib import Path
+
+# Avoid noisy warnings / slow imports when the default Matplotlib config dir is
+# not writable (common in sandboxed environments).
+if "MPLCONFIGDIR" not in os.environ:
+    mpl_config = Path("/tmp/matplotlib")
+    mpl_config.mkdir(parents=True, exist_ok=True)
+    os.environ["MPLCONFIGDIR"] = str(mpl_config)
+
 import matplotlib
 import matplotlib.pyplot as plt
 
-
-# Visual style constants 
-
-class STYLE:
-    # Reference circles / rings
-    PHOTON_SPHERE_COLOR = "#fbbf24"
-    PHOTON_SPHERE_LS    = "--"
-    PHOTON_SPHERE_LABEL = "Photon sphere (1.5 rs)"
-
-    ISCO_COLOR  = "#a78bfa"
-    ISCO_LS     = ":"
-    ISCO_LABEL  = "ISCO (3.0 rs)"
-
-    # Geodesic path
-    TRAJECTORY_COLOR = "#00d4ff"
-    TRAJECTORY_LW    = 1.5
-    TRAJECTORY_ALPHA = 0.9
-    TRAJECTORY_LABEL = "Geodesic path"
-
-    # Start / end markers
-    START_COLOR  = "#39d353"
-    END_COLOR    = "#f472b6"
-    PLUNGE_COLOR = "#ff6b35"
-
-    # Grid / background
-    GRID_COLOR    = "#333344"
-    HORIZON_COLOR = "black"
-    HORIZON_EDGE  = "#ffffff"
+from render.style import STYLE
 
 
 def build_title(r0_rs: float, speed_frac: float, angle_deg: float,
