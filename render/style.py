@@ -30,11 +30,11 @@ class STYLE:
     HORIZON_EDGE = "#ffffff"
 
     # Window / panel backgrounds
-    UI_BG       = "#18181b"
-    UI_PANEL_BG = "#1f1f23"
-    UI_BORDER   = "#2e2e35"
-    UI_CANVAS_BG = "#0f0f12"
-    UI_GRID     = "#1e1e26"
+    UI_BG        = "#0f0f12"   # outermost window
+    UI_PANEL_BG  = "#16161a"   # left sidebar
+    UI_CARD_BG   = "#1c1c22"   # stat cards / section backgrounds
+    UI_BORDER    = "#2a2a35"   # separators and outlines
+    UI_CANVAS_BG = "#0a0a0e"   # orbit canvas
  
     # Text
     UI_TEXT       = "#e4e4e7"
@@ -48,19 +48,25 @@ class STYLE:
     UI_AMBER  = PHOTON_SPHERE_COLOR     # "#fbbf24"
     UI_PURPLE = ISCO_COLOR              # "#a78bfa"
 
-    # UI typography
-    FONT_FAMILY = "Inter"                    # macOS 12+ / Windows 11 built-in
-    FONT_FAMILY_FALLBACK = "Helvetica Neue"  # older macOS / Linux
+    # UI Text
+    UI_TEXT       = "#e8e8f0"   # primary readable text
+    UI_TEXT_MUTED = "#5a5a72"   # secondary / labels
+    UI_GRID = "#1a1a24"
 
-    FONT_TITLE   = (FONT_FAMILY, 13, "bold")
-    FONT_SUBTITLE = (FONT_FAMILY, 11)
-    FONT_LABEL   = (FONT_FAMILY, 10)
-    FONT_LABEL_BOLD = (FONT_FAMILY, 10, "bold")
-    FONT_SMALL   = (FONT_FAMILY, 9)
-    FONT_SMALL_BOLD = (FONT_FAMILY, 9, "bold")
-    FONT_STAT    = (FONT_FAMILY, 13, "bold")
-    FONT_BTN     = (FONT_FAMILY, 11, "bold")
-    FONT_LEGEND  = (FONT_FAMILY, 9)
-    FONT_RADIOLABEL = (FONT_FAMILY, 10)
-    FONT_CANVAS  = (FONT_FAMILY, 8)
+    # UI typography
+    _F  = "DM Sans"
+    _FM = "DM Mono"   # monospaced variant for numeric readouts
+ 
+    FONT_TITLE       = (_F,  13, "bold")
+    FONT_SUBTITLE    = (_F,  11)
+    FONT_SECTION     = (_F,   9, "bold")
+    FONT_LABEL       = (_F,  10)
+    FONT_LABEL_BOLD  = (_F,  10, "bold")
+    FONT_SMALL       = (_F,   9)
+    FONT_STAT_VAL    = (_FM, 14, "bold")   # numeric readout in stat cards
+    FONT_STAT_LABEL  = (_F,   8)
+    FONT_BTN         = (_F,  11, "bold")
+    FONT_RADIO       = (_F,  10)
+    FONT_LEGEND      = (_F,   9)
+    FONT_CANVAS_TICK = (_FM,  8)           # r-labels on the canvas
 
