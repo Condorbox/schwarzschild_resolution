@@ -6,7 +6,7 @@ The right-hand display panel of the Geodesic Explorer.
 Tabs
 ----
   2D Orbit       — polar canvas rendered natively in Tkinter (no Matplotlib).
-  3D View        — Matplotlib 3-D figure embedded in a tk.Canvas via FigureCanvasTkAgg.
+  3D View        — Matplotlib 3-D figure embedded via FigureCanvasTkAgg.
   Phase Space    — r vs ṙ (dr/dτ) phase-space portrait, also via Matplotlib.
 """
 
@@ -20,12 +20,12 @@ from typing import TYPE_CHECKING
 import tkinter as tk
 
 from render.style import STYLE
-from ui.widgets   import StatCard, TabBar
+from ui.widgets   import ComputingOverlay, StatCard, TabBar
 
 if TYPE_CHECKING:
     from core.config import Solution
 
-# ── suppress noisy Matplotlib config warnings in sandboxed envs ──────────────
+# Suppress noisy Matplotlib config warnings in sandboxed environments
 if "MPLCONFIGDIR" not in os.environ:
     _mpl_tmp = Path("/tmp/matplotlib_ui")
     _mpl_tmp.mkdir(parents=True, exist_ok=True)
@@ -53,8 +53,7 @@ class _OrbitCanvas(tk.Frame):
 
         self._canvas = tk.Canvas(
             self,
-            width=self._SIZE,
-            height=self._SIZE,
+            width=self._SIZE, height=self._SIZE,
             bg=STYLE.UI_CANVAS_BG,
             highlightthickness=1,
             highlightbackground=_BRD,
@@ -62,7 +61,6 @@ class _OrbitCanvas(tk.Frame):
         self._canvas.grid(row=0, column=0, sticky="nsew")
         self._canvas.bind("<Configure>", self._on_resize)
         self._solution: Solution | None = None
-
         self._draw_placeholder()
 
 
@@ -96,10 +94,10 @@ class _OrbitCanvas(tk.Frame):
     def _draw_placeholder(self) -> None:
         cv = self._canvas
         cv.delete("all")
-        W, H, cx, cy = self._geometry()
+        _, _, cx, cy = self._geometry()
         cv.create_text(
             cx, cy,
-            text="Select a preset or adjust\nparameters and press  ▶  Run",
+            text="Select a preset or adjust parameters\nand press  ▶  Run",
             fill=_MUTE,
             font=STYLE.FONT_LABEL,
             justify="center",
@@ -117,24 +115,24 @@ class _OrbitCanvas(tk.Frame):
         r_max = sol.r_max * 1.15
         scale = (min(W, H) * 0.46) / r_max
 
-        # faint grid rings 
+        # faint grid rings
         step = max(1, int(r_max / 5))
         for gr in range(step, int(r_max) + step, step):
             self._draw_circle(cx, cy, gr, scale,
                               fill=STYLE.UI_GRID, width=1, smooth=True)
 
-        # reference circles 
+        # reference circles
         self._draw_circle(cx, cy, 1.5, scale,
                           fill=STYLE.UI_AMBER, width=1, dash=(4, 4), smooth=True)
         self._draw_circle(cx, cy, 3.0, scale,
                           fill=STYLE.UI_PURPLE, width=1, dash=(2, 3), smooth=True)
 
-        # event horizon 
+        # event horizon
         eh = 1.0 * scale
         cv.create_oval(cx - eh, cy - eh, cx + eh, cy + eh,
                        fill="#000000", outline="white", width=1.5)
 
-        # trajectory 
+        # trajectory
         pts = []
         for r, phi in zip(sol.r, sol.phi):
             x, y = self._polar_to_xy(r, phi, cx, cy, scale)
@@ -164,21 +162,19 @@ class _OrbitCanvas(tk.Frame):
             cv.create_text(lx, ly, text=f"{gr} rs",
                            fill=_MUTE, font=STYLE.FONT_CANVAS_TICK)
 
-        # legend 
-        leg = [
+        # in-canvas legend
+        legend = [
             (STYLE.UI_AMBER,  "Photon sphere 1.5 rs"),
             (STYLE.UI_PURPLE, "ISCO 3.0 rs"),
             (STYLE.UI_GREEN,  "Start"),
             (STYLE.UI_ORANGE if sol.plunged else STYLE.UI_PINK,
              "End (plunge)" if sol.plunged else "End"),
         ]
-        lx0, ly0 = 10, H - 10 - len(leg) * 16
-        for colour, label in leg:
-            cv.create_rectangle(lx0, ly0, lx0+8, ly0+8,
-                                 fill=colour, outline="")
-            cv.create_text(lx0 + 14, ly0 + 4, text=label,
-                           anchor="w", fill=_MUTE,
-                           font=STYLE.FONT_CANVAS_TICK)
+        ly0 = H - 10 - len(legend) * 16
+        for colour, label in legend:
+            cv.create_rectangle(10, ly0, 18, ly0+8, fill=colour, outline="")
+            cv.create_text(24, ly0+4, text=label, anchor="w",
+                           fill=_MUTE, font=STYLE.FONT_CANVAS_TICK)
             ly0 += 16
 
 
@@ -197,19 +193,17 @@ class _View3D(tk.Frame):
 
         tk.Label(ctrl, text="Inclination",
                  font=STYLE.FONT_LABEL, bg=_BG, fg=_MUTE).pack(side="left")
+
         self._inc_var = tk.DoubleVar(value=30.0)
         self._inc_lbl = tk.Label(ctrl, text="30°",
                                  font=STYLE.FONT_LABEL_BOLD, bg=_BG, fg=_TEXT)
         self._inc_lbl.pack(side="right")
 
         import tkinter.ttk as ttk
-        self._inc_slider = ttk.Scale(
-            ctrl, from_=0, to=90,
-            variable=self._inc_var,
-            orient="horizontal",
-            command=self._on_inc_change,
-        )
-        self._inc_slider.pack(side="left", fill="x", expand=True, padx=8)
+        ttk.Scale(ctrl, from_=0, to=90, variable=self._inc_var,
+                  orient="horizontal",
+                  command=self._on_inc_change).pack(
+            side="left", fill="x", expand=True, padx=8)
 
         self._inc_var.trace_add("write", lambda *_: self._inc_lbl.config(
             text=f"{self._inc_var.get():.0f}°"))
@@ -221,9 +215,9 @@ class _View3D(tk.Frame):
         )
         self._placeholder.grid(row=1, column=0)
 
-        self._canvas_widget = None   # FigureCanvasTkAgg widget, created lazily
-        self._fig           = None
-        self._ax            = None
+        self._mpl_canvas = None
+        self._fig        = None
+        self._ax         = None
         self._solution: Solution | None = None
 
 
@@ -237,7 +231,6 @@ class _View3D(tk.Frame):
             self._redraw()
 
     def _ensure_figure(self) -> None:
-        """Create the Matplotlib figure + canvas widget on first use."""
         if self._fig is not None:
             return
 
@@ -248,14 +241,12 @@ class _View3D(tk.Frame):
         from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
         self._placeholder.grid_forget()
-
         self._fig = plt.figure(figsize=(7, 6), facecolor=STYLE.UI_CANVAS_BG)
         self._ax  = self._fig.add_subplot(111, projection="3d",
                                            facecolor=STYLE.UI_CANVAS_BG)
-
         canvas = FigureCanvasTkAgg(self._fig, master=self)
         canvas.get_tk_widget().grid(row=1, column=0, sticky="nsew")
-        self._canvas_widget = canvas
+        self._mpl_canvas = canvas
 
     def _redraw(self) -> None:
         import numpy as np
@@ -263,50 +254,42 @@ class _View3D(tk.Frame):
 
         sol = self._solution
         inc = self._inc_var.get()
-
         self._ensure_figure()
-        ax  = self._ax
-        fig = self._fig
-        ax.cla()
 
-        # dark styling
+        ax  = self._ax
+        ax.cla()
         ax.set_facecolor(STYLE.UI_CANVAS_BG)
-        fig.patch.set_facecolor(STYLE.UI_CANVAS_BG)
-        for spine in ax.spines.values():
-            spine.set_edgecolor(STYLE.GRID_COLOR)
+        self._fig.patch.set_facecolor(STYLE.UI_CANVAS_BG)
         ax.tick_params(colors=_MUTE, labelsize=7)
-        ax.xaxis.label.set_color(_MUTE)
-        ax.yaxis.label.set_color(_MUTE)
-        ax.zaxis.label.set_color(_MUTE)
         for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
             axis.pane.fill = False
             axis.pane.set_edgecolor(STYLE.GRID_COLOR)
+            axis.label.set_color(_MUTE)
 
         r_max = sol.r_max * 1.15
 
         # event horizon sphere
         u = np.linspace(0, 2 * np.pi, 40)
         v = np.linspace(0, np.pi, 40)
-        Xs = np.outer(np.cos(u), np.sin(v))
-        Ys = np.outer(np.sin(u), np.sin(v))
-        Zs = np.outer(np.ones(40), np.cos(v))
-        ax.plot_surface(Xs, Ys, Zs, color="#000000", alpha=1.0, zorder=5)
+        ax.plot_surface(
+            np.outer(np.cos(u), np.sin(v)),
+            np.outer(np.sin(u), np.sin(v)),
+            np.outer(np.ones(40), np.cos(v)),
+            color="#000000", alpha=1.0, zorder=5,
+        )
 
-        # photon sphere ring
         phi_ring = np.linspace(0, 2 * np.pi, 200)
         ax.plot(*to_cartesian(np.full_like(phi_ring, 1.5), phi_ring, inc),
                 color=STYLE.PHOTON_SPHERE_COLOR, lw=1, ls="--", alpha=0.7)
         ax.plot(*to_cartesian(np.full_like(phi_ring, 3.0), phi_ring, inc),
                 color=STYLE.ISCO_COLOR, lw=1, ls=":", alpha=0.7)
 
-        # trajectory
         xt, yt, zt = to_cartesian(sol.r, sol.phi, inc)
         ax.plot(xt, yt, zt,
                 color=STYLE.TRAJECTORY_COLOR,
                 lw=STYLE.TRAJECTORY_LW,
                 alpha=STYLE.TRAJECTORY_ALPHA)
 
-        # markers
         ax.scatter([xt[0]],  [yt[0]],  [zt[0]],
                    color=STYLE.START_COLOR, s=40, zorder=10)
         end_c = STYLE.PLUNGE_COLOR if sol.plunged else STYLE.END_COLOR
@@ -327,8 +310,7 @@ class _View3D(tk.Frame):
             f"α={p.angle_deg}°  inc={inc:.0f}°",
             color=_TEXT, fontsize=8, pad=8,
         )
-
-        self._canvas_widget.draw()
+        self._mpl_canvas.draw()
 
 
 # Phase-space portrait  r vs ṙ
@@ -346,9 +328,9 @@ class _PhaseSpace(tk.Frame):
         )
         self._placeholder.grid(row=0, column=0)
 
-        self._canvas_widget = None
-        self._fig           = None
-        self._ax            = None
+        self._mpl_canvas = None
+        self._fig        = None
+        self._ax         = None
 
 
     def render(self, sol: Solution) -> None:
@@ -366,76 +348,55 @@ class _PhaseSpace(tk.Frame):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
         self._placeholder.grid_forget()
-
         self._fig, self._ax = plt.subplots(
-            figsize=(7, 6),
-            facecolor=STYLE.UI_CANVAS_BG,
-        )
+            figsize=(7, 6), facecolor=STYLE.UI_CANVAS_BG)
         self._ax.set_facecolor(STYLE.UI_CANVAS_BG)
-
         canvas = FigureCanvasTkAgg(self._fig, master=self)
         canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
-        self._canvas_widget = canvas
+        self._mpl_canvas = canvas
 
     def _redraw(self, sol: Solution) -> None:
-        import numpy as np
-
         ax  = self._ax
         fig = self._fig
         ax.cla()
-
         ax.set_facecolor(STYLE.UI_CANVAS_BG)
         fig.patch.set_facecolor(STYLE.UI_CANVAS_BG)
         for spine in ax.spines.values():
             spine.set_edgecolor(STYLE.GRID_COLOR)
         ax.tick_params(colors=_MUTE, labelsize=8)
 
-        # colour the trajectory by proper time (viridis-ish hand-rolled gradient)
         n = len(sol.tau)
-        colours = [
-            "#{:02x}{:02x}{:02x}".format(
-                int(0 + 0 * (i / n)),
-                int(180 + 75 * (i / n)),
-                int(255 - 100 * (i / n)),
-            )
-            for i in range(n)
-        ]
-
-        # draw as a multi-segment line coloured by τ
         for i in range(n - 1):
+            alpha = i / n
+            g = int(0xd4 * alpha)
+            b = int(0xff - 0x64 * alpha)
             ax.plot(sol.r[i:i+2], sol.rdot[i:i+2],
-                    color=colours[i], lw=1.2, alpha=0.85)
+                    color=f"#00{g:02x}{b:02x}", lw=1.2, alpha=0.85)
 
-        # start / end markers
         ax.scatter([sol.r[0]],  [sol.rdot[0]],
                    color=STYLE.START_COLOR, s=50, zorder=5, label="Start")
         end_c = STYLE.PLUNGE_COLOR if sol.plunged else STYLE.END_COLOR
-        ax.scatter([sol.r[-1]], [sol.rdot[-1]],
-                   color=end_c, s=50, zorder=5,
+        ax.scatter([sol.r[-1]], [sol.rdot[-1]], color=end_c, s=50, zorder=5,
                    label="End (plunge)" if sol.plunged else "End")
 
-        # ISCO and photon-sphere vertical guides
         ax.axvline(3.0, color=STYLE.ISCO_COLOR,
                    lw=0.8, ls=":", alpha=0.6, label="ISCO (3 rs)")
         ax.axvline(1.5, color=STYLE.PHOTON_SPHERE_COLOR,
                    lw=0.8, ls="--", alpha=0.6, label="Photon sphere (1.5 rs)")
-        ax.axhline(0,   color=STYLE.GRID_COLOR, lw=0.6)
+        ax.axhline(0, color=STYLE.GRID_COLOR, lw=0.6)
 
-        ax.set_xlabel("r  (rs)", color=_MUTE, fontsize=9)
+        ax.set_xlabel("r  (rs)",    color=_MUTE, fontsize=9)
         ax.set_ylabel("ṙ = dr/dτ", color=_MUTE, fontsize=9)
         ax.set_title("Phase Space  —  r vs ṙ", color=_TEXT, fontsize=9, pad=8)
-
-        leg = ax.legend(fontsize=7, facecolor=STYLE.UI_CARD_BG,
+        leg = ax.legend(fontsize=7, facecolor=_CARD,
                         edgecolor=_BRD, labelcolor=_TEXT)
         leg.get_frame().set_alpha(0.8)
-
         fig.tight_layout()
-        self._canvas_widget.draw()
+        self._mpl_canvas.draw()
 
 
 # Stats bar
 class _StatsBar(tk.Frame):
-    """Row of StatCard widgets shown above the view tabs."""
 
     _CARDS = [
         ("steps",  "Steps"),
@@ -448,8 +409,7 @@ class _StatsBar(tk.Frame):
     def __init__(self, parent: tk.Widget):
         super().__init__(parent, bg=_BG)
         self._cards: dict[str, StatCard] = {}
-
-        for i, (key, label) in enumerate(self._CARDS):
+        for key, label in self._CARDS:
             card = StatCard(self, label)
             card.pack(side="left", fill="x", expand=True, padx=(0, 3))
             self._cards[key] = card
@@ -463,7 +423,6 @@ class _StatsBar(tk.Frame):
             self._cards["status"].set("Plunged",  STYLE.UI_ORANGE)
         else:
             self._cards["status"].set("Orbiting", STYLE.UI_GREEN)
-
 
 
 class ViewPanel(tk.Frame):
@@ -482,7 +441,8 @@ class ViewPanel(tk.Frame):
 
     Public API
     ----------
-    display(solution)   — update all three views and the stats bar.
+    display(solution)       — render result into all tabs + update stats.
+    set_loading(bool)       — show/hide the ComputingOverlay.
     """
 
     _TABS = [
@@ -496,7 +456,7 @@ class ViewPanel(tk.Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
 
-        # stats
+        # stats bar
         self._stats = _StatsBar(self)
         self._stats.grid(row=0, column=0, sticky="ew", pady=(0, 6))
 
@@ -505,39 +465,57 @@ class ViewPanel(tk.Frame):
                                on_change=self._switch_tab,
                                initial="2d")
         self._tab_bar.grid(row=1, column=0, sticky="ew")
+        tk.Frame(self, bg=_BRD, height=1).grid(row=1, column=0, sticky="sew")
 
-        # thin border below tab bar
-        tk.Frame(self, bg=_BRD, height=1).grid(row=1, column=0,
-                                                sticky="sew", pady=(0, 0))
+        # content frame
+        self._content = tk.Frame(self, bg=_BG)
+        self._content.grid(row=2, column=0, sticky="nsew")
+        self._content.columnconfigure(0, weight=1)
+        self._content.rowconfigure(0, weight=1)
 
-        # tab views
         self._views: dict[str, tk.Frame] = {
-            "2d":    _OrbitCanvas(self),
-            "3d":    _View3D(self),
-            "phase": _PhaseSpace(self),
+            "2d":    _OrbitCanvas(self._content),
+            "3d":    _View3D(self._content),
+            "phase": _PhaseSpace(self._content),
         }
         for view in self._views.values():
-            view.grid(row=2, column=0, sticky="nsew")
+            view.grid(row=0, column=0, sticky="nsew")
 
         self._active_tab = "2d"
         self._raise_tab("2d")
+
+        # computing overlay — sits above everything in _content
+        self._overlay = ComputingOverlay(self._content)
+        # (not placed yet; start() / stop() handle placement)
 
         self._solution: Solution | None = None
 
 
     def display(self, sol: Solution) -> None:
-        """Render the solution into all tabs and update the stats bar."""
+        """Render the solution and update the stats bar."""
         self._solution = sol
         self._stats.update(sol)
-
-        # Always render the active tab immediately
         self._render_tab(self._active_tab, sol)
+
+    def set_loading(self, loading: bool) -> None:
+        """
+        Show or hide the computing overlay.
+
+        Called from the main thread:
+          - Before spawning the solver thread  → set_loading(True)
+          - After the result arrives via after() → set_loading(False)
+        """
+        if loading:
+            self._overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+            # self._overlay.lift()   # ensure it sits above the tab views
+            self._overlay.start()
+        else:
+            self._overlay.stop()   # hides itself via place_forget()
 
 
     def _switch_tab(self, tab_id: str) -> None:
         self._active_tab = tab_id
         self._raise_tab(tab_id)
-        # Render on demand when switching if a solution is available
         if self._solution is not None:
             self._render_tab(tab_id, self._solution)
 

@@ -7,11 +7,13 @@ Launched via:  python main.py ui
 
 from __future__ import annotations
 
+import threading
 import tkinter as tk
 from tkinter import messagebox
+from typing import Optional
 
 from core         import solver
-from core.config  import OrbitalParams, SolverConfig
+from core.config  import OrbitalParams, SolverConfig, Solution
 from render.style import STYLE
 from ui.control_panel import ControlPanel
 from ui.view_panel    import ViewPanel
@@ -24,7 +26,7 @@ class GeodesicApp(tk.Tk):
         super().__init__()
         self.title("Schwarzschild Geodesic Explorer")
         self.configure(bg=STYLE.UI_BG)
-        self.minsize(900, 620)
+        self.minsize(920, 640)
         self.resizable(True, True)
 
         # Improve text rendering on high-DPI displays
@@ -33,9 +35,13 @@ class GeodesicApp(tk.Tk):
         except Exception:
             pass
 
+        # Shared slot for thread → main-thread communication
+        self._pending_result: Optional[Solution]   = None
+        self._pending_error:  Optional[Exception]  = None
+
         self._build_layout()
 
-        # Kick off the first integration once the window is fully rendered
+        # Fire the first preset once the window has fully rendered
         self.after(100, self._control.activate_first_preset)
 
     # ── layout ────────────────────────────────────────────────────────────────
@@ -55,14 +61,54 @@ class GeodesicApp(tk.Tk):
     # ── callback ──────────────────────────────────────────────────────────────
 
     def _on_run(self, params: OrbitalParams, cfg: SolverConfig) -> None:
-        """Run the integrator and hand the solution to the view panel."""
+        """
+        Show the loading state immediately, then dispatch solver to a thread.
+        """
+        self._view.set_loading(True)
+        self._control.set_running(True)
+
+        # Clear any stale results
+        self._pending_result = None
+        self._pending_error  = None
+
+        thread = threading.Thread(
+            target=self._worker,
+            args=(params, cfg),
+            daemon=True,   # won't block app exit
+        )
+        thread.start()
+
+    # ── background worker ─────────────────────────────────────────────────────
+
+    def _worker(self, params: OrbitalParams, cfg: SolverConfig) -> None:
+        """
+        Runs on the worker thread.
+        Deposits its outcome then schedules _on_result_ready on the main thread.
+        """
         try:
-            sol = solver.run(params, cfg)
+            self._pending_result = solver.run(params, cfg)
         except Exception as exc:
-            messagebox.showerror("Integration error", str(exc))
+            self._pending_error = exc
+        finally:
+            # after(0, …) is the only thread-safe Tkinter call
+            self.after(0, self._on_result_ready)
+
+    # ── result handler ─────────────────────────────────────────────────────
+
+    def _on_result_ready(self) -> None:
+        """
+        Called on the main thread once the worker finishes.
+        Hides the overlay, re-enables the Run button, and shows the result.
+        """
+        self._view.set_loading(False)
+        self._control.set_running(False)
+
+        if self._pending_error is not None:
+            messagebox.showerror("Integration error", str(self._pending_error))
             return
 
-        self._view.display(sol)
+        if self._pending_result is not None:
+            self._view.display(self._pending_result)
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
