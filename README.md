@@ -297,7 +297,7 @@ Point `MPLCONFIGDIR` at a writable directory:
 export MPLCONFIGDIR=/tmp/matplotlib
 ```
 
-**`r0_rs` must be > 1.5` error**
+**r0_rs must be > 1.5 error**
 The photon sphere sits at r = 1.5 rs — no stable particle trajectories exist inside it. Increase `--r0` above 1.5.
 
 **GUI window is blank on first launch**
