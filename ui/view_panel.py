@@ -388,7 +388,7 @@ class _PhaseSpace(tk.Frame):
         ax.set_xlabel("r  (rs)",    color=_MUTE, fontsize=9)
         ax.set_ylabel("ṙ = dr/dτ", color=_MUTE, fontsize=9)
         ax.set_title("Phase Space  —  r vs ṙ", color=_TEXT, fontsize=9, pad=8)
-        leg = ax.legend(fontsize=7, facecolor=_CARD,
+        leg = ax.legend(loc="upper right", fontsize=7, facecolor=_CARD,
                         edgecolor=_BRD, labelcolor=_TEXT)
         leg.get_frame().set_alpha(0.8)
         fig.tight_layout()
