@@ -35,6 +35,9 @@ class GeodesicApp(tk.Tk):
         except Exception:
             pass
 
+        self._closing = False
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
         # Shared slot for thread → main-thread communication
         self._pending_result: Optional[Solution]   = None
         self._pending_error:  Optional[Exception]  = None
@@ -100,6 +103,9 @@ class GeodesicApp(tk.Tk):
         Called on the main thread once the worker finishes.
         Hides the overlay, re-enables the Run button, and shows the result.
         """
+        if self._closing:
+            return
+
         self._view.set_loading(False)
         self._control.set_running(False)
 
@@ -109,6 +115,12 @@ class GeodesicApp(tk.Tk):
 
         if self._pending_result is not None:
             self._view.display(self._pending_result)
+
+    # ── close handler ─────────────────────────────────────────────────────
+    def _on_close(self) -> None:
+        """Cleanly destroy the window and let the process exit."""
+        self._closing = True
+        self.destroy()
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
