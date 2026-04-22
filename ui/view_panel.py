@@ -507,13 +507,16 @@ class ViewPanel(tk.Frame):
         """
         if loading:
             self._overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
-            # self._overlay.lift()   # ensure it sits above the tab views
+            tk.Widget.tkraise(self._overlay)   # ensure it sits above the tab views
             self._overlay.start()
         else:
             self._overlay.stop()   # hides itself via place_forget()
 
 
     def _switch_tab(self, tab_id: str) -> None:
+        if not self.winfo_exists():
+            return
+
         self._active_tab = tab_id
         self._raise_tab(tab_id)
         if self._solution is not None:
@@ -521,6 +524,12 @@ class ViewPanel(tk.Frame):
 
     def _raise_tab(self, tab_id: str) -> None:
         self._views[tab_id].tkraise()
+        if hasattr(self, "_overlay") and self._overlay.winfo_ismapped():
+            tk.Widget.tkraise(self._overlay)
+
 
     def _render_tab(self, tab_id: str, sol: Solution) -> None:
+        if not self.winfo_exists():
+            return
+
         self._views[tab_id].render(sol)

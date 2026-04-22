@@ -120,7 +120,7 @@ class GeodesicApp(tk.Tk):
     def _on_close(self) -> None:
         """Cleanly destroy the window and let the process exit."""
         self._closing = True
-        self.destroy()
+        self.quit()
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
