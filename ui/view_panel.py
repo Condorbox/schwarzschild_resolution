@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import tkinter as tk
+import numpy as np
+from matplotlib.collections import LineCollection
 
 from render.style import STYLE
 from ui.widgets   import ComputingOverlay, StatCard, TabBar
@@ -365,15 +367,22 @@ class _PhaseSpace(tk.Frame):
             spine.set_edgecolor(STYLE.GRID_COLOR)
         ax.tick_params(colors=_MUTE, labelsize=8)
 
-        n = len(sol.tau)
-        for i in range(n - 1):
-            alpha = i / n
-            g = int(0xd4 * alpha)
-            b = int(0xff - 0x64 * alpha)
-            ax.plot(sol.r[i:i+2], sol.rdot[i:i+2],
-                    color=f"#00{g:02x}{b:02x}", lw=1.2, alpha=0.85)
+        # Build segments and colours in numpy
+        points = np.array([sol.r, sol.rdot]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
-        ax.scatter([sol.r[0]],  [sol.rdot[0]],
+        n = len(sol.tau)
+        alphas = np.linspace(0, 1, n - 1)
+        g = (0xd4 * alphas).astype(int)
+        b = (0xff - 0x64 * alphas).astype(int)
+        colors = [f"#00{gi:02x}{bi:02x}" for gi, bi in zip(g, b)]
+
+        lc = LineCollection(segments, colors=colors, linewidths=1.2, alpha=0.85)
+        ax.add_collection(lc)
+        ax.autoscale()
+
+        # Markers, reference lines, labels — unchanged from original
+        ax.scatter([sol.r[0]], [sol.rdot[0]],
                    color=STYLE.START_COLOR, s=50, zorder=5, label="Start")
         end_c = STYLE.PLUNGE_COLOR if sol.plunged else STYLE.END_COLOR
         ax.scatter([sol.r[-1]], [sol.rdot[-1]], color=end_c, s=50, zorder=5,
@@ -385,7 +394,7 @@ class _PhaseSpace(tk.Frame):
                    lw=0.8, ls="--", alpha=0.6, label="Photon sphere (1.5 rs)")
         ax.axhline(0, color=STYLE.GRID_COLOR, lw=0.6)
 
-        ax.set_xlabel("r  (rs)",    color=_MUTE, fontsize=9)
+        ax.set_xlabel("r  (rs)", color=_MUTE, fontsize=9)
         ax.set_ylabel("ṙ = dr/dτ", color=_MUTE, fontsize=9)
         ax.set_title("Phase Space  —  r vs ṙ", color=_TEXT, fontsize=9, pad=8)
         leg = ax.legend(loc="upper right", fontsize=7, facecolor=_CARD,
