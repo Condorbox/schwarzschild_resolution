@@ -6,8 +6,7 @@ Sub-commands
   run      Integrate and plot a geodesic (custom parameters or a preset).
   presets  List all built-in presets.
   info     Print stats for a run without opening a plot window.
-  gui      Launch a browser-based GUI (renders PNGs inline).
-  tui      Launch the Textual terminal UI.
+  ui       Launch the interactive Tkinter desktop GUI.
 """
 
 from __future__ import annotations
