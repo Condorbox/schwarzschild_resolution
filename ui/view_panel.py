@@ -13,26 +13,20 @@ Tabs
 from __future__ import annotations
 
 import math
-import os
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import tkinter as tk
 import numpy as np
 from matplotlib.collections import LineCollection
 
+from render import avoid_matplotlib_warning
 from render.style import STYLE
 from ui.widgets   import ComputingOverlay, StatCard, TabBar
 
 if TYPE_CHECKING:
     from core.config import Solution
 
-# Suppress noisy Matplotlib config warnings in sandboxed environments
-if "MPLCONFIGDIR" not in os.environ:
-    _mpl_tmp = Path("/tmp/matplotlib_ui")
-    _mpl_tmp.mkdir(parents=True, exist_ok=True)
-    os.environ["MPLCONFIGDIR"] = str(_mpl_tmp)
-
+avoid_matplotlib_warning()
 
 _BG   = STYLE.UI_BG
 _BRD  = STYLE.UI_BORDER
@@ -251,7 +245,6 @@ class _View3D(tk.Frame):
         self._mpl_canvas = canvas
 
     def _redraw(self) -> None:
-        import numpy as np
         from render.plot3d import to_cartesian
 
         sol = self._solution

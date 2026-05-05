@@ -10,21 +10,15 @@ auto_save_path — non-clobbering filename helper.
 """
 
 from __future__ import annotations
-import os
 from pathlib import Path
 
-# Avoid noisy warnings / slow imports when the default Matplotlib config dir is
-# not writable (common in sandboxed environments).
-if "MPLCONFIGDIR" not in os.environ:
-    mpl_config = Path("/tmp/matplotlib")
-    mpl_config.mkdir(parents=True, exist_ok=True)
-    os.environ["MPLCONFIGDIR"] = str(mpl_config)
+from render import avoid_matplotlib_warning
+avoid_matplotlib_warning()
 
 import matplotlib
 import matplotlib.pyplot as plt
 
 from render.style import STYLE
-
 
 def build_title(r0_rs: float, speed_frac: float, angle_deg: float,
                 extra: str = "") -> str:
