@@ -7,7 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from core.config import Solution
-from render._base import STYLE, build_title, save_or_show
+from render._base import build_title, save_or_show
+from  render.style import STYLE
 
 
 def plot(solution: Solution, save_path: str | None = None) -> str | None:

@@ -18,7 +18,6 @@ avoid_matplotlib_warning()
 import matplotlib
 import matplotlib.pyplot as plt
 
-from render.style import STYLE
 
 def build_title(r0_rs: float, speed_frac: float, angle_deg: float,
                 extra: str = "") -> str:

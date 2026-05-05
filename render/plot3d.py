@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — registers the 3-D projection
 
 from core.config import Solution
-from render._base import STYLE, build_title, save_or_show
+from render._base import build_title, save_or_show
+from  render.style import STYLE
 
 
 def plot(solution: Solution,
