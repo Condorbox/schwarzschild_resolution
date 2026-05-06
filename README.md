@@ -287,14 +287,38 @@ The test suite covers:
 
 **No plot window appears**
 Use `--save output.png`, or set the backend explicitly before running:
+
+Linux / macOS
 ```bash
 MPLBACKEND=Agg python main.py run --preset circular --save orbit.png
 ```
+Windows CMD
+```shell
+set MPLBACKEND=Agg && python main.py run --preset circular --save orbit.png
+```
+
+Windows PowerShell
+```shell
+$env:MPLBACKEND="Agg"; python main.py run --preset circular --save orbit.png
+```
 
 **Matplotlib config/cache warnings**
+This usually means your home directory isn't writable.
 Point `MPLCONFIGDIR` at a writable directory:
+
+Linux / macOS
 ```bash
 export MPLCONFIGDIR=/tmp/matplotlib
+```
+
+Windows CMD
+```shell
+set MPLCONFIGDIR=%TEMP%\matplotlib
+```
+
+Windows PowerShell
+```shell
+$env:MPLCONFIGDIR="$env:TEMP\matplotlib"
 ```
 
 **r0_rs must be > 1.5 error**
